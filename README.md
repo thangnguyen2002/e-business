@@ -1,6 +1,6 @@
 # e-business ERD Diagram
 
-![Screenshot 2023-12-11 223806](https://github.com/thangnguyen2002/e-business/assets/75868691/270f38e6-a9e6-47ae-946f-dfa5c74944bd)
+![Diagram](https://github.com/thangnguyen2002/e-business/assets/75868691/576ab513-b984-45d2-8f94-8e4b36b900a3)
 
 
 ♈ Have done some basic features to strengthen my skills
