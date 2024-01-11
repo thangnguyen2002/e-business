@@ -1,12 +1,9 @@
 package com.example.shopapp.models;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -34,8 +31,8 @@ public class User extends BaseEntity {
     @Column(name = "password", length = 200, nullable = false)
     private String password;
 
-    @Column(name = "is_active")
-    private Boolean active; //user nen xoa mem, gia su sau nay xem lai lich su
+    @Column(name = "is_active") //tai khoan bi khoa hay ko
+    private boolean active; //user nen xoa mem, gia su sau nay xem lai lich su
 
     @Column(name = "date_of_birth")
     private Date dateOfBirth;
@@ -49,4 +46,8 @@ public class User extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<Comment> comments = new ArrayList<>();
 }
