@@ -13,8 +13,16 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  #flyway
+  #Đường dẫn tới thư mục chứa các script Flyway
+  flyway:
+    locations: classpath:/db/migration,classpath:/dev/db/migration #mtruong productio, develop
+    #Phiên bản baseline sẽ = 0 và không thực hiện bất kỳ thay đổi nào trong DB
+    baseline-on-migrate: true
+    baseline-version: 0
 api:
   prefix: api/v1
 jwt:
   expiration: 2592000 #30 days = 30 * 24 * 60 * 60
+  expiration-refresh-token: 5184000 #60 days = 60 * 24 * 60 * 60
   secretKey: 54455357342478364763268483726487236482638746283764832
