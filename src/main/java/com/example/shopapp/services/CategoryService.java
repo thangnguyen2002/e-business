@@ -5,6 +5,7 @@ import com.example.shopapp.responses.CategoryResponseDTO;
 import com.example.shopapp.models.Category;
 import com.example.shopapp.repositories.CategoryRepository;
 import com.example.shopapp.services.interfaces.ICategoryService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,7 @@ import java.util.List;
 public class CategoryService implements ICategoryService {
     @Autowired
     private final CategoryRepository categoryRepository;
-
+    @Transactional
     @Override
     public CategoryResponseDTO createCategory(CategoryDTO categoryDTO) {
         Category newCategory = Category
@@ -47,7 +48,7 @@ public class CategoryService implements ICategoryService {
         }
         return categoryResponseDTOS;
     }
-
+    @Transactional
     @Override
     public CategoryResponseDTO updateCategory(Long categoryId, CategoryDTO categoryDTO) {
         Category existingCategory = categoryRepository.findById(categoryId)

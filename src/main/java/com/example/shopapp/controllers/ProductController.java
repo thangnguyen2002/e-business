@@ -12,6 +12,7 @@ import com.github.javafaker.Faker;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,10 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${api.prefix}/products")
@@ -93,7 +92,7 @@ public class ProductController {
                             HttpStatus.UNSUPPORTED_MEDIA_TYPE);
                 }
                 // Lưu file và cập nhật thumbnail trong DTO
-                String filename = storeFile(file);// Thay thế hàm này với code của bạn để lưu file
+                String filename = iProductService.storeFile(file);// Thay thế hàm này với code của bạn để lưu file
                 //lưu vào bảng product_images
                 ProductImage productImage = iProductService.createProductImage(
                         productId,
@@ -108,44 +107,53 @@ public class ProductController {
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-
     }
 
-    private String storeFile(MultipartFile file) throws IOException { //hàm nyà return tên file sau khi đã lưu
-        if (!isImageFile(file) || file.getOriginalFilename() == null) {
-            throw new IOException("Invalid image format");
+    @GetMapping("/images/{imageName}")
+    public ResponseEntity<?> viewImage(@PathVariable String imageName) {
+        try {
+            Path imagePath = Paths.get("uploads/" + imageName);
+            UrlResource resource = new UrlResource(imagePath.toUri());
+            if (resource.exists()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .body(resource);
+            } else {
+                return new ResponseEntity<>(
+                        new UrlResource(Paths.get("uploads/notfound.jpeg").toUri()),
+                        HttpStatus.OK);
+//                return new ResponseEntity<>("", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
-        //đổi tên để tránh cái c bị ghi đè khi trùng tên và lưu vào th mục uploads
-        String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename())); //lay ten file goc
-        // Thêm UUID vào trước tên file để đảm bảo tên file là duy nhất
-        String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
-        // Đường dẫn đến thư mục mà bạn muốn lưu file
-        java.nio.file.Path uploadDir = Paths.get("uploads");
-        // Kiểm tra và tạo thư mục nếu nó không tồn tại
-        if (!Files.exists(uploadDir)) {
-            Files.createDirectories(uploadDir);
-        }
-        // Đường dẫn đầy đủ đến file
-        java.nio.file.Path destination = Paths.get(uploadDir.toString(), uniqueFilename);
-        // Sao chép file vào thư mục đích
-        Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
-        return uniqueFilename;
     }
 
-    private boolean isImageFile(MultipartFile file) {
-        String contentType = file.getContentType();
-        return contentType != null && contentType.startsWith("image/");
+    @DeleteMapping("images/{imageName}")
+    public ResponseEntity<?> deleteFile(@PathVariable String imageName) {
+        try {
+            iProductService.deleteFile(imageName);
+            return new ResponseEntity<>("Delete file successfully", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping
     public ResponseEntity<ProductListResponse> getProducts(
-            @RequestParam(value = "page", defaultValue = "10") Integer page,
-            @RequestParam(value = "limit", defaultValue = "10") Integer limit
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "limit", defaultValue = "10") Integer limit,
+            @RequestParam(value = "keyword", defaultValue = "") String keyword,
+            @RequestParam(value = "category_id", defaultValue = "0") Long categoryId
+
     ) {
         PageRequest pageRequest = PageRequest.of(
-                page, limit, Sort.by("createdAt").descending()
+                page, limit,
+                Sort.by("createdAt").descending()
+//                Sort.by("id").ascending()
         );
-        Page<ProductResponse> productPage = iProductService.getAllProducts(pageRequest);
+
+        Page<ProductResponse> productPage = iProductService.getAllProducts(categoryId, keyword, pageRequest);
         // Lấy tổng số trang
         int totalPages = productPage.getTotalPages();
         List<ProductResponse> products = productPage.getContent();
@@ -164,7 +172,22 @@ public class ProductController {
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
 
+    @GetMapping("/by-ids")
+    public ResponseEntity<?> getProductsByIds(@RequestParam("ids") String ids) {
+        //eg: 1,3,5,7
+        try {
+            // Tách chuỗi ids thành một mảng các số nguyên
+            List<Long> productIds = Arrays.stream(ids.split(","))
+                    .map(Long::parseLong)
+                    .toList();
+            List<Product> products = iProductService.findProductsByIds(productIds);
+            return ResponseEntity.ok().body(products);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PutMapping("/{id}")
@@ -188,20 +211,20 @@ public class ProductController {
         }
     }
 
-//    @PostMapping("/generateFakeProducts")
+    //    @PostMapping("/generateFakeProducts")
     private ResponseEntity<String> generateFakeProducts() {
         Faker faker = new Faker();
         for (int i = 0; i < 1_000_000; i++) {
             String productName = faker.commerce().productName();
-            if(iProductService.existsByName(productName)) {
+            if (iProductService.existsByName(productName)) {
                 continue;
             }
             ProductDTO productDTO = ProductDTO.builder()
                     .name(productName)
-                    .price((float)faker.number().numberBetween(10, 90_000_000))
+                    .price((float) faker.number().numberBetween(10, 90_000_000))
                     .description(faker.lorem().sentence())
                     .thumbnail("")
-                    .categoryId((long)faker.number().numberBetween(2, 5))
+                    .categoryId((long) faker.number().numberBetween(2, 5))
                     .build();
             try {
                 iProductService.createProduct(productDTO);
