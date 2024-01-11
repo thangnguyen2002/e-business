@@ -1,9 +1,12 @@
 package com.example.shopapp.models;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -64,4 +67,14 @@ public class Order {
     private Boolean active;//thuộc về admin
     //order nen xoa mem, gia su sau nay xem lai lich su
     //produt thi xoa cứng cx dc
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference //tranh viec lặp lại vô hạn, vì khi Order gọi vào OrderDetail, OrderDetail lại gọi Order
+                           //roi Order lại gọi OrderDetail -> unlimited circle loop (vòng lặp vô hạn)
+    //nen phai dung @JsonManagedReference va @JsonBackReference
+    private List<OrderDetail> orderDetails; //cho them vao de xem dc ca order detail khi co dc order (orderResponse)
+
+    @ManyToOne
+    @JoinColumn(name = "coupon_id")
+    private Coupon coupon;
 }

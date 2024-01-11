@@ -9,6 +9,7 @@ import com.example.shopapp.repositories.OrderDetailRepository;
 import com.example.shopapp.repositories.OrderRepository;
 import com.example.shopapp.repositories.ProductRepository;
 import com.example.shopapp.services.interfaces.IOrderDetailService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +21,7 @@ public class OrderDetailService implements IOrderDetailService {
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final ProductRepository productRepository;
-
+    @Transactional
     @Override
     public OrderDetail createOrderDetail(OrderDetailDTO orderDetailDTO) throws Exception {
         Order order = orderRepository.findById(orderDetailDTO.getOrderId())
@@ -45,7 +46,7 @@ public class OrderDetailService implements IOrderDetailService {
         return orderDetailRepository.findById(id)
                 .orElseThrow(()->new DataNotFoundException("Cannot find OrderDetail with id: "+id));
     }
-
+    @Transactional
     @Override
     public OrderDetail updateOrderDetail(Long id, OrderDetailDTO orderDetailData) throws Exception {
         OrderDetail orderDetail = getOrderDetail(id);
