@@ -214,7 +214,7 @@ public class UserController {
             @Valid @PathVariable Integer active //1 or 0
     ) {
         try {
-           iUserService.blockOrEnable(userId, active>0);
+           iUserService.blockOrEnable(userId, active > 0);
            String message = active > 0 ? "Successfully enabled the user." : "Successfully blocked the user.";
             return new ResponseEntity<>(message, HttpStatus.OK);
         } catch (DataNotFoundException e) {

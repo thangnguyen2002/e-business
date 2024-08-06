@@ -4,12 +4,12 @@ CREATE TABLE IF NOT EXISTS coupons (
   active BOOLEAN NOT NULL DEFAULT true
 );
 
-ALTER TABLE orders --1 coupon áp dụng cho cả order
+ALTER TABLE orders -- 1 coupon áp dụng cho cả order
 ADD COLUMN coupon_id INT,
 ADD CONSTRAINT fk_orders_coupon
 FOREIGN KEY (coupon_id) REFERENCES coupons(id);
 
-ALTER TABLE order_details --1 coupon có thể chỉ áp dụng cho 1 số product nhất định
+ALTER TABLE order_details -- 1 coupon có thể chỉ áp dụng cho 1 số product nhất định
 ADD COLUMN coupon_id INT,
 ADD CONSTRAINT fk_order_details_coupon
 FOREIGN KEY (coupon_id) REFERENCES coupons(id);
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS coupon_conditions (
   attribute VARCHAR(255) NOT NULL,
   operator VARCHAR(10) NOT NULL, -- điều kiện
   value VARCHAR(255) NOT NULL,
-  discount_amount DECIMAL(5, 2) NOT NULL, --discount bn %
+  discount_amount DECIMAL(5, 2) NOT NULL, -- discount bn %
   FOREIGN KEY (coupon_id) REFERENCES coupons(id)
 );
 --INSERT INTO coupons(id, code) VALUES (1, 'HEAVEN');
